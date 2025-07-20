@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import jr.brian.drawai.BuildConfig
 import jr.brian.drawai.model.state.AIChatState
+import jr.brian.drawai.model.state.drawingSuggestions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -20,6 +21,7 @@ class AIViewModel : ViewModel() {
     val state = _state.asStateFlow()
 
     private val apiKey = BuildConfig.claudeApiKey
+    private val model = AnthropicModels.Haiku_3_5
 
     init {
         generateObjectToDraw()
@@ -40,13 +42,14 @@ class AIViewModel : ViewModel() {
             val agent = AIAgent(
                 executor = simpleAnthropicExecutor(apiKey),
                 systemPrompt = "You are an artist.",
-                llmModel = AnthropicModels.Sonnet_3_5,
+                llmModel = model,
             )
             try {
                 val result = agent.run(
-                    "Give me a simple object to draw. " +
+                    "Give me something simple to draw. " +
                             "It should be something that can be drawn with a finger or stylus. " +
-                            "Keep the instruction short."
+                            "Use ${drawingSuggestions.joinToString(", ")} as inspiration. " +
+                            "Keep the instruction short and concise."
                 )
                 _state.update { currentState -> currentState.copy(objectToDraw = result) }
             } catch (e: Exception) {
@@ -69,8 +72,9 @@ class AIViewModel : ViewModel() {
                 user(
                     content = "Judge this drawing. Make judgements on quality," +
                             " creativity, and how well it represents ${state.value.objectToDraw}. " +
-                            "Give me a score out of 10. Feel to be rude and harsh if the score is low." +
-                            " Keep in mind that this is drawn using a finger or stylus.",
+                            "Give me a score out of 10. Be very rude and harsh if the score is low or average. " +
+                            "Be very nice if the score is high. " +
+                            "Keep in mind that this is drawn using a finger or stylus.",
                     attachments = listOf(
                         Attachment.Image(
                             content = AttachmentContent.Binary.Bytes(byteArray),
@@ -83,7 +87,7 @@ class AIViewModel : ViewModel() {
             try {
                 val response = promptExecutor.execute(
                     prompt = prompt,
-                    model = AnthropicModels.Sonnet_3_5,
+                    model = model,
                     tools = listOf()
                 )
                 response.forEach {
