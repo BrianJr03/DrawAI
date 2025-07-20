@@ -41,7 +41,8 @@ class AIViewModel : ViewModel() {
         viewModelScope.launch {
             val agent = AIAgent(
                 executor = simpleAnthropicExecutor(apiKey),
-                systemPrompt = "You are an artist.",
+                systemPrompt = "You are an artist. " +
+                        "You have experience sketching with a finger or stylus.",
                 llmModel = model,
             )
             try {
@@ -68,13 +69,15 @@ class AIViewModel : ViewModel() {
         }
         viewModelScope.launch {
             val prompt = prompt("multimodal_input") {
-                system("You are an artist.")
+                system("You are a harsh but fair judge for a drawing contest. " +
+                        "Keep in mind that this the submitted drawings were " +
+                        "made using a finger or stylus.")
                 user(
                     content = "Judge this drawing. Make judgements on quality," +
                             " creativity, and how well it represents ${state.value.objectToDraw}. " +
                             "Give me a score out of 10. Be very rude and harsh if the score is low or average. " +
                             "Be very nice if the score is high. " +
-                            "Keep in mind that this is drawn using a finger or stylus.",
+                            "Use humor and be creative with your feedback.",
                     attachments = listOf(
                         Attachment.Image(
                             content = AttachmentContent.Binary.Bytes(byteArray),
