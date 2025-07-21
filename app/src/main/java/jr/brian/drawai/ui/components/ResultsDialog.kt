@@ -19,8 +19,10 @@ import androidx.compose.ui.unit.dp
 import android.graphics.BitmapFactory
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import jr.brian.drawai.util.Util
 
@@ -38,43 +40,49 @@ fun ResultsDialog(
             onDismissRequest = onDismissRequest,
             title = { Text(text = title) },
             text = {
-                LazyColumn(
+                Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    item {
-                        if (imageData != null) {
-                            val bitmap = remember(imageData) {
-                                BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
-                            }
-                            bitmap?.let {
-                                Image(
-                                    bitmap = it.asImageBitmap(),
-                                    contentDescription = "Captured Image",
-                                    modifier = Modifier
-                                        .size(200.dp)
-                                        .padding(bottom = 16.dp),
-                                    contentScale = ContentScale.Fit
-                                )
-                            }
-                        } else {
-                            Text("No image available", style = MaterialTheme.typography.bodyMedium)
-                            Spacer(modifier = Modifier.height(16.dp))
+                    if (imageData != null) {
+                        val bitmap = remember(imageData) {
+                            BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
                         }
-                    }
-                    item {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = text ?: "Judging your work...",
-                                style = MaterialTheme.typography.bodyLarge
+                        bitmap?.let {
+                            Image(
+                                bitmap = it.asImageBitmap(),
+                                contentDescription = "Captured Image",
+                                modifier = Modifier
+                                    .size(200.dp)
+                                    .padding(bottom = 16.dp),
+                                contentScale = ContentScale.Fit
                             )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            AnimatedVisibility(text.isNullOrBlank()) {
-                                CircularProgressIndicator(
-                                    strokeWidth = 2.dp,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
+                        }
+                    } else {
+                        Text("No image available", style = MaterialTheme.typography.bodyMedium)
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    val scrollState = rememberScrollState()
+
+                    LaunchedEffect(text) {
+                        scrollState.scrollTo(scrollState.maxValue)
+                    }
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.verticalScroll(scrollState)
+                    ) {
+                        Text(
+                            text = text ?: "Judging your work...",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        AnimatedVisibility(text.isNullOrBlank()) {
+                            CircularProgressIndicator(
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(24.dp)
+                            )
                         }
                     }
                 }

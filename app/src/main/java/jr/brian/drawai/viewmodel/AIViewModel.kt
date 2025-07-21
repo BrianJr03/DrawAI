@@ -1,6 +1,9 @@
 package jr.brian.drawai.viewmodel
 
 import ai.koog.agents.core.agent.AIAgent
+import ai.koog.agents.core.agent.entity.AIAgentStrategy
+import ai.koog.agents.core.dsl.builder.forwardTo
+import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.clients.anthropic.AnthropicModels
 import ai.koog.prompt.executor.llms.all.simpleAnthropicExecutor
@@ -43,22 +46,45 @@ class AIViewModel : ViewModel() {
         }
     }
 
+    private fun agentStreamingStrategy(onCollect: (String) -> Unit): AIAgentStrategy<String, String> {
+        return strategy("library-assistant") {
+            val getMdOutput by node<String, String> { input ->
+                llm.writeSession {
+                    updatePrompt { user(input) }
+                    val markdownStream = requestLLMStreaming()
+                    markdownStream.collect { str ->
+                        onCollect(str)
+                    }
+                }
+                ""
+            }
+            edge(nodeStart forwardTo getMdOutput)
+            edge(getMdOutput forwardTo nodeFinish)
+        }
+    }
+
     fun generateObjectToDraw() {
         resetState()
         viewModelScope.launch {
+            val agentStrategy = agentStreamingStrategy { str ->
+                _state.update { currentState ->
+                    val currentObjectToDraw = currentState.objectToDraw ?: ""
+                    currentState.copy(objectToDraw = currentObjectToDraw + str)
+                }
+            }
             val agent = AIAgent(
                 executor = simpleAnthropicExecutor(apiKey),
                 systemPrompt = "You are an artist. " +
                         "You have experience sketching with a finger or stylus.",
                 llmModel = model,
+                strategy = agentStrategy,
             )
             try {
-                val result = agent.run(
+                agent.run(
                     "Give me a simple ${drawingSuggestions.random()} to draw. " +
                             "It should be something that can be drawn with a finger or stylus. " +
                             "Keep the instruction short and concise."
                 )
-                _state.update { currentState -> currentState.copy(objectToDraw = result) }
             } catch (e: Exception) {
                 _state.update { currentState ->
                     currentState.copy(objectToDraw = "Error: ${e.message}")
@@ -74,7 +100,10 @@ class AIViewModel : ViewModel() {
         val resolver = context.contentResolver
 
         val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, "captured_sketch_${System.currentTimeMillis()}")
+            put(
+                MediaStore.MediaColumns.DISPLAY_NAME,
+                "captured_sketch_${System.currentTimeMillis()}"
+            )
             put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
             put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
             put(MediaStore.MediaColumns.IS_PENDING, 1)
@@ -107,24 +136,19 @@ class AIViewModel : ViewModel() {
     }
 
     fun submitDrawing(byteArray: ByteArray) {
-        _state.update { currentState ->
-            currentState.copy(
-                response = null,
-            )
-        }
+        _state.update { currentState -> currentState.copy(response = null) }
         viewModelScope.launch {
             val prompt = prompt("multimodal_input") {
                 system(
-                    "You are a harsh but unfair judge for a drawing contest. " +
-                            "Keep in mind that this the submitted drawings were " +
-                            "made using a finger or stylus. (Who really cares?)"
+                    "You are an egotistical, harsh, and unfair judge for a drawing contest. " +
+                            "You love to insult people and their artistic abilities." +
+                            "You are very critical and love to point out the flaws in people's work."
                 )
                 user(
                     content = "Judge this drawing. Make harsh, nasty, judgements on quality," +
                             " creativity, and how well it represents ${state.value.objectToDraw}. " +
-                            "Give me a score out of 10. Be very rude and harsh if the score is low or average. " +
-                            "Be very super nice and complimentary if the score is high. " +
-                            "Use offensive humor and sarcasm and be creative with your feedback. " +
+                            "Give me a score out of 10. Be very rude and harsh regarding the artist's abilities. " +
+                            "Use offensive humor, sarcasm and be creative with your feedback. " +
                             "Express great disdain if the drawing is bad or completely blank (all white image).",
                     attachments = listOf(
                         Attachment.Image(
@@ -136,14 +160,13 @@ class AIViewModel : ViewModel() {
             }
             val promptExecutor = simpleAnthropicExecutor(apiKey)
             try {
-                val response = promptExecutor.execute(
+                promptExecutor.executeStreaming(
                     prompt = prompt,
                     model = model,
-                    tools = listOf()
-                )
-                response.forEach {
+                ).collect { chunk ->
                     _state.update { currentState ->
-                        currentState.copy(response = it.content)
+                        val currentResponse = currentState.response ?: ""
+                        currentState.copy(response = currentResponse + chunk)
                     }
                 }
             } catch (e: Exception) {
