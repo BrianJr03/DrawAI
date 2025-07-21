@@ -124,7 +124,8 @@ class AIViewModel : ViewModel() {
                             " creativity, and how well it represents ${state.value.objectToDraw}. " +
                             "Give me a score out of 10. Be very rude and harsh if the score is low or average. " +
                             "Be very super nice and complimentary if the score is high. " +
-                            "Use humor and sarcasm and be creative with your feedback.",
+                            "Use offensive humor and sarcasm and be creative with your feedback. " +
+                            "Express great disdain if the drawing is bad or completely blank (all white image).",
                     attachments = listOf(
                         Attachment.Image(
                             content = AttachmentContent.Binary.Bytes(byteArray),

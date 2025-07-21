@@ -17,8 +17,12 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import android.graphics.BitmapFactory
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.remember
+import jr.brian.drawai.util.Util
 
 @Composable
 fun ResultsDialog(
@@ -26,8 +30,9 @@ fun ResultsDialog(
     onDismissRequest: () -> Unit,
     imageData: ByteArray?,
     text: String?,
-    title: String = "Results"
 ) {
+    val title = if (text.isNullOrBlank())
+        "You're being judged ${Util.EYES_EMOJI}" else "The results are in!"
     if (showDialog) {
         AlertDialog(
             onDismissRequest = onDismissRequest,
@@ -35,8 +40,7 @@ fun ResultsDialog(
             text = {
                 LazyColumn(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     item {
                         if (imageData != null) {
@@ -59,10 +63,19 @@ fun ResultsDialog(
                         }
                     }
                     item {
-                        Text(
-                            text = text ?: "Judging your work...",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = text ?: "Judging your work...",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            AnimatedVisibility(text.isNullOrBlank()) {
+                                CircularProgressIndicator(
+                                    strokeWidth = 2.dp,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
                     }
                 }
             },

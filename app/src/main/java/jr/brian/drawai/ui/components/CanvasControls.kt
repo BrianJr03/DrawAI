@@ -3,6 +3,7 @@ package jr.brian.drawai.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,9 +19,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Send
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -52,6 +55,7 @@ fun CanvasControls(
     modifier: Modifier = Modifier
 ) {
     var isResponseVisible by remember { mutableStateOf(true) }
+    var isEraserSelected by remember { mutableStateOf(false) }
     val toggleResponseVisibility = { isResponseVisible = !isResponseVisible }
     Column(
         modifier = Modifier
@@ -60,12 +64,20 @@ fun CanvasControls(
         verticalArrangement = Arrangement.Center
     ) {
         AnimatedVisibility(isResponseVisible) {
-            Text(
-                response ?: "Brainstorming on what to draw...",
-                modifier = Modifier
-                    .padding(16.dp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    response ?: "Brainstorming on what to draw...",
+                    modifier = Modifier
+                        .padding(16.dp)
 
-            )
+                )
+                AnimatedVisibility(response.isNullOrBlank()) {
+                    CircularProgressIndicator(
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
         }
         AnimatedVisibility(isResponseVisible) {
             HorizontalDivider(
@@ -94,6 +106,38 @@ fun CanvasControls(
                 Spacer(modifier = Modifier.width(8.dp))
             }
 
+            item {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                            .graphicsLayer {
+                                val scale = if (isEraserSelected) 1.2f else 1f
+                                scaleX = scale
+                                scaleY = scale
+                            },
+                        onClick = {
+                            isEraserSelected = true
+                            onSelectColor(Color.White)
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Close,
+                            modifier = Modifier.size(32.dp),
+                            tint = Color.White,
+                            contentDescription = "Toggle erase mode",
+                        )
+                    }
+                    HorizontalDivider(
+                        color = if (isEraserSelected) selectedColor else Color.Transparent,
+                        thickness = 2.dp,
+                        modifier = Modifier
+                            .width(40.dp)
+                            .padding(top = 4.dp, start = 12.dp)
+                    )
+                }
+            }
+
             items(colors) { color ->
                 val isSelected = selectedColor == color
                 Column {
@@ -108,7 +152,11 @@ fun CanvasControls(
                             .clip(CircleShape)
                             .background(color)
                             .padding(horizontal = 8.dp)
-                            .clickable {
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            ) {
+                                isEraserSelected = false
                                 onSelectColor(color)
                             }
                     )
@@ -137,7 +185,7 @@ fun CanvasControls(
                 ) {
                     IconButton(
                         enabled = isGeneratingObjToDraw,
-                        modifier = Modifier.padding(start= 12.dp),
+                        modifier = Modifier.padding(start = 12.dp),
                         onClick = {
                             isResponseVisible = true
                             onGenerateObjectToDraw()

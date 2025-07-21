@@ -26,10 +26,11 @@ fun DrawingCanvas(
     onAction: (DrawingAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val backgroundColor = Color.White
     Canvas(
         modifier = modifier
             .clipToBounds()
-            .background(Color.White)
+            .background(backgroundColor)
             .pointerInput(true) {
                 detectDragGestures(
                     onDragStart = {
@@ -51,12 +52,14 @@ fun DrawingCanvas(
             drawPath(
                 path = pathData.offsets,
                 color = pathData.color,
+                thickness = if (pathData.color == backgroundColor) 50f else 10f
             )
         }
         currentPath?.let {
             drawPath(
                 path = it.offsets,
-                color = it.color
+                color = it.color,
+                thickness = if (it.color == backgroundColor) 50f else 10f
             )
         }
     }
