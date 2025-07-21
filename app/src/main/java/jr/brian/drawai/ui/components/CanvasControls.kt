@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -54,12 +55,11 @@ fun CanvasControls(
         modifier = Modifier
             .background(Color.DarkGray)
             .clickable(onClick = toggleResponseVisibility),
-        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         AnimatedVisibility(isResponseVisible) {
             Text(
-                response ?: "Brainstorming what to draw...",
+                response ?: "Brainstorming on what to draw...",
                 modifier = Modifier
                     .padding(16.dp)
 
@@ -72,7 +72,7 @@ fun CanvasControls(
                     .padding(
                         start = 16.dp,
                         end = 16.dp,
-                        bottom = 16.dp
+                        bottom = 8.dp
                     )
             )
         }
@@ -82,12 +82,10 @@ fun CanvasControls(
                 .padding(
                     start = 8.dp,
                     end = 8.dp,
-                    top = 8.dp,
+                    top = 16.dp,
                     bottom = 16.dp
                 ),
-            horizontalArrangement = Arrangement.spacedBy(
-                12.dp,
-            ),
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             item {
@@ -96,67 +94,83 @@ fun CanvasControls(
 
             items(colors) { color ->
                 val isSelected = selectedColor == color
-                Box(
-                    modifier = Modifier
-                        .graphicsLayer {
-                            val scale = if (isSelected) 1.2f else 1f
-                            scaleX = scale
-                            scaleY = scale
-                        }
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(color)
-                        .padding(horizontal = 8.dp)
-                        .clickable {
-                            onSelectColor(color)
-                        }
-                )
+                Column {
+                    Box(
+                        modifier = Modifier
+                            .graphicsLayer {
+                                val scale = if (isSelected) .9f else .7f
+                                scaleX = scale
+                                scaleY = scale
+                            }
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(color)
+                            .padding(horizontal = 8.dp)
+                            .clickable {
+                                onSelectColor(color)
+                            }
+                    )
+                    HorizontalDivider(
+                        color = if (isSelected) selectedColor else Color.Transparent,
+                        thickness = 2.dp,
+                        modifier = Modifier
+                            .width(40.dp)
+                            .padding(top = 4.dp)
+                    )
+                }
             }
 
             item {
                 VerticalDivider(
                     color = Color.White,
                     modifier = Modifier
-                        .height(40.dp)
-                        .padding(horizontal = 8.dp)
+                        .height(50.dp)
+                        .padding(start = 24.dp, end = 8.dp)
                 )
             }
 
             item {
-                IconButton(
-                    enabled = isGeneratingObjToDraw,
-                    onClick = {
-                        isResponseVisible = true
-                        onGenerateObjectToDraw()
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    IconButton(
+                        enabled = isGeneratingObjToDraw,
+                        modifier = Modifier.padding(start= 12.dp),
+                        onClick = {
+                            isResponseVisible = true
+                            onGenerateObjectToDraw()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Refresh,
+                            modifier = Modifier.size(32.dp),
+                            contentDescription = "Generate new object to draw",
+                        )
                     }
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Refresh,
-                        contentDescription = "Generate new object to draw",
-                    )
-                }
-            }
 
-            item {
-                IconButton(
-                    enabled = isGeneratingObjToDraw,
-                    onClick = onSubmitDrawing
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.Send,
-                        contentDescription = "Submit drawing",
-                    )
-                }
-            }
+                    IconButton(
+                        enabled = isGeneratingObjToDraw,
+                        onClick = {
+                            isResponseVisible = false
+                            onSubmitDrawing()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.Send,
+                            modifier = Modifier.size(32.dp),
+                            contentDescription = "Submit drawing",
+                        )
+                    }
 
-            item {
-                IconButton(
-                    onClick = onClearCanvas
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Delete,
-                        contentDescription = "Clear canvas",
-                    )
+                    IconButton(
+                        onClick = onClearCanvas
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Delete,
+                            modifier = Modifier.size(32.dp),
+                            contentDescription = "Clear canvas",
+                        )
+                    }
                 }
             }
 
