@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -46,6 +47,7 @@ fun CanvasControls(
     onSelectColor: (Color) -> Unit,
     onClearCanvas: () -> Unit,
     onSubmitDrawing: () -> Unit,
+    onFavorite: () -> Unit,
     onGenerateObjectToDraw: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -159,6 +161,19 @@ fun CanvasControls(
                             imageVector = Icons.AutoMirrored.Outlined.Send,
                             modifier = Modifier.size(32.dp),
                             contentDescription = "Submit drawing",
+                        )
+                    }
+
+                    IconButton(
+                        onClick = {
+                            isResponseVisible = false
+                            onFavorite()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Favorite,
+                            modifier = Modifier.size(32.dp),
+                            contentDescription = "Save drawing",
                         )
                     }
 

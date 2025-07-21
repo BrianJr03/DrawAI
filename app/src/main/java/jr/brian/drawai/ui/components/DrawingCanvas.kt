@@ -68,20 +68,24 @@ private fun DrawScope.drawPath(
     thickness: Float = 10f
 ) {
     val smoothedPath = Path().apply {
-        if(path.isNotEmpty()) {
+        if (path.isNotEmpty()) {
             moveTo(path.first().x, path.first().y)
             val smoothness = 5
-            for(i in 1..path.lastIndex) {
+            for (i in 1..path.lastIndex) {
                 val from = path[i - 1]
                 val to = path[i]
                 val dx = abs(from.x - to.x)
                 val dy = abs(from.y - to.y)
-                if(dx >= smoothness || dy >= smoothness) {
-                    quadraticTo(
-                        x1 = (from.x + to.x) / 2f,
-                        y1 = (from.y + to.y) / 2f,
-                        x2 = to.x,
-                        y2 = to.y
+                if (dx >= smoothness || dy >= smoothness) {
+                    val controlX = (from.x + to.x) / 2f
+                    val controlY = (from.y + to.y) / 2f
+                    cubicTo(
+                        x1 = controlX,
+                        y1 = controlY,
+                        x2 = controlX,
+                        y2 = controlY,
+                        x3 = to.x,
+                        y3 = to.y
                     )
                 }
             }

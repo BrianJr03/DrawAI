@@ -43,6 +43,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val viewModel = viewModel<DrawViewModel>()
                     val aiViewModel = viewModel<AIViewModel>()
+
                     val drawingState by viewModel.state.collectAsStateWithLifecycle()
                     val aiChatState by aiViewModel.state.collectAsStateWithLifecycle()
                     AppUI(
@@ -59,7 +60,13 @@ class MainActivity : ComponentActivity() {
                             viewModel.onAction(DrawingAction.OnClearCanvas)
                         },
                         handleCapture = aiViewModel::submitDrawing,
-                        onGenerateObjectToDraw = aiViewModel::generateObjectToDraw
+                        onGenerateObjectToDraw = aiViewModel::generateObjectToDraw,
+                        onFavorite = { currentDrawing ->
+                            aiViewModel.saveDrawingToStorage(
+                                context = this,
+                                imageData = currentDrawing
+                            )
+                        }
                     )
                 }
             }
@@ -77,7 +84,9 @@ private fun AppUI(
     onClearCanvas: () -> Unit,
     handleCapture: (ByteArray) -> Unit,
     onGenerateObjectToDraw: () -> Unit,
+    onFavorite: (ByteArray) -> Unit
 ) {
+    var isDrawingFavorite by remember { mutableStateOf(false) }
     var isResultsDialogShowing by remember { mutableStateOf(false) }
     var currentDrawing by remember { mutableStateOf<ByteArray?>(null) }
     ResultsDialog(
@@ -101,6 +110,13 @@ private fun AppUI(
                 onSubmitDrawing = {
                     captureController.capture()
                 },
+                onFavorite = {
+                    captureController.capture()
+                    currentDrawing?.let {
+                        onFavorite(it)
+                    }
+                    isDrawingFavorite = true
+                },
                 onGenerateObjectToDraw = onGenerateObjectToDraw,
                 isGeneratingObjToDraw = aiChatState.objectToDraw != null,
                 modifier = Modifier.fillMaxWidth()
@@ -114,7 +130,10 @@ private fun AppUI(
                     )
                     currentDrawing = byteArray
                     handleCapture(byteArray)
-                    isResultsDialogShowing = true
+                    if (!isDrawingFavorite) {
+                        isResultsDialogShowing = true
+                    }
+                    isDrawingFavorite = false
                 }
             ) {
                 DrawingCanvas(
